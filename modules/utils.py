@@ -11,8 +11,7 @@ def get_extent(df, X, Y):
 def heat_map(df, ax, X, Y, Z, extent=None):
     extent = extent if extent else get_extent(df, X, Y)
     if len(extent) < 4:
-        raise("extente error")
-
+        raise("extent error")
     f = interp2d(df[X],df[Y],df[Z], kind='linear')
     x_coords = np.arange(extent[0],extent[1]+1)
     z_coords = np.arange(extent[2],extent[3]+1)
@@ -25,20 +24,20 @@ def heat_map(df, ax, X, Y, Z, extent=None):
     ax.colorbar()
     return fig
 
-def map(sf, ax, att, restrition = []):
+def map(sf, ax, att=None, restrition = []):
     fields = sf.fields[1:] 
     field_names = [field[0] for field in fields] 
     s = sf.shape(1)
-    x = list([i[0] for i in s.shape.points[:]])
-    y = list([i[1] for i in s.shape.points[:]])
+    x = list([i[0] for i in s.points[:]])
+    y = list([i[1] for i in s.points[:]])
     x_min, x_max= min(x), max(x) 
     y_min, y_max= min(y), max(y) 
-    del x, y 
+    # del x, y 
     plot_lines = []
     micro = []
     for shape in sf.shapeRecords():
         atr = dict(zip(field_names, shape.record)) 
-        if not restrition or atr[att] in restrition:
+        if (not restrition or atr[att] in restrition):
             x = list(reversed([i[0] for i in shape.shape.points[:]]))
             y = list(reversed([i[1] for i in shape.shape.points[:]]))
 
@@ -59,15 +58,25 @@ def map(sf, ax, att, restrition = []):
     extent = [x_min,x_max,y_min,y_max]
     return extent, plot_lines, micro
 
-def classifica(classes, **data):
-    for cl in classes.keys():
-        if eval(classes[cl]["criterio"]):
-            return cl
+
+def classifica(classes, default, **data):
+    # for key, v in data.items():
+    #     locals()[key] = v
+    if classes:
+        for cl in classes.keys():
+            try: 
+                if eval(classes[cl]["criterio"], data):
+                    return cl
+            except:
+                pass
+
+    return default if default else "none"
 
 def points(df, X, Y, ax, classes = None):
     """
     classes model:
-        "Classe_name": "cor":"hexa", "criterio":"eval"
+        "Classe_name":{ "cor":"hexa", "criterio":"eval"}    
+    
     """
 
     df["classe"] = df.apply(lambda x: classifica(classes, **x), axis=1)
